@@ -331,9 +331,9 @@ namespace UnityEditor.XCodeEditor
 		{
 			return _objects[guid];
 		}
-		
-		public PBXDictionary AddFile( string filePath, PBXGroup parent = null, string tree = "SOURCE_ROOT", bool createBuildFiles = true, bool weak = false )
-		{
+
+        public PBXDictionary AddFile( string filePath, string compilerFlags, PBXGroup parent = null, string tree = "SOURCE_ROOT", bool createBuildFiles = true, bool weak = false )
+        {
 			//Debug.Log("AddFile " + filePath + ", " + parent + ", " + tree + ", " + (createBuildFiles? "TRUE":"FALSE") + ", " + (weak? "TRUE":"FALSE") ); 
 			
 			PBXDictionary results = new PBXDictionary();
@@ -378,8 +378,11 @@ namespace UnityEditor.XCodeEditor
 				return null;
 			}
 			
-			fileReference = new PBXFileReference( filePath, (TreeEnum)System.Enum.Parse( typeof(TreeEnum), tree ) );
-			parent.AddChild( fileReference );
+			fileReference = new PBXFileReference( filePath, (TreeEnum)System.Enum.Parse( typeof(TreeEnum), tree ) )
+			    {
+			        compilerFlags = compilerFlags
+			    };
+            parent.AddChild( fileReference );
 			fileReferences.Add( fileReference );
 			results.Add( fileReference.guid, fileReference );
 			
@@ -502,8 +505,8 @@ namespace UnityEditor.XCodeEditor
 					// Treat it like a file and copy even if not recursive
 					// TODO also for .xcdatamodeld?
 					Debug.LogWarning( "This is a special folder: " + directory );
-					AddFile( directory, newGroup, "SOURCE_ROOT", createBuildFile );
-					continue;
+                    AddFile(directory, "", newGroup, "SOURCE_ROOT", createBuildFile);
+                    continue;
 				}
 				
 				if( recursive ) {
@@ -519,8 +522,8 @@ namespace UnityEditor.XCodeEditor
 					continue;
 				}
 				Debug.Log("Adding Files for Folder");
-				AddFile( file, newGroup, "SOURCE_ROOT", createBuildFile );
-			}
+                AddFile(file, "", newGroup, "SOURCE_ROOT", createBuildFile);
+            }
 			
 			modified = true;
 			return modified;
@@ -562,8 +565,9 @@ namespace UnityEditor.XCodeEditor
 				// The group gets a reference to the variant, not to the file itself
 				newGroup.AddChild(variant);
 
-				AddFile( file, variant, "GROUP", createBuildFile );
-			}
+                //AddFile(file, variant, "GROUP", createBuildFile);
+                AddFile(file, "", variant, "GROUP", createBuildFile);
+            }
 			
 			modified = true;
 			return modified;
@@ -641,8 +645,8 @@ namespace UnityEditor.XCodeEditor
 		        {
 		            string completeLibPath = CombinePaths("usr/lib", libRef.filePath);
 		            Debug.Log("Adding library " + completeLibPath);
-		            this.AddFile(completeLibPath, modGroup, "SDKROOT", true, libRef.isWeak);
-		        }
+                    this.AddFile(completeLibPath, "", modGroup, "SDKROOT", true, libRef.isWeak);
+                }
 		    }
 
             if (mod.frameworks != null)
@@ -655,19 +659,19 @@ namespace UnityEditor.XCodeEditor
 		            string[] filename = framework.Split(':');
 		            bool isWeak = (filename.Length > 1);
                     string completePath = CombinePaths("System/Library/Frameworks", filename[0]);
-                    this.AddFile(completePath, frameworkGroup, "SDKROOT", true, isWeak);
-		        }
+                    this.AddFile(completePath, "", frameworkGroup, "SDKROOT", true, isWeak);
+                }
 		    }
 
 		    if (mod.files != null)
 		    {
                 Debug.Log("Adding files...");
-                
-                foreach (string filePath in mod.files)
-		        {
-		            string absoluteFilePath = CombinePaths(mod.path, filePath);
-		            this.AddFile(absoluteFilePath, modGroup);
-		        }
+
+                foreach (XCModFile file in mod.files)
+                {
+                    string absoluteFilePath = CombinePaths(mod.path, file.filePath);
+                    this.AddFile(absoluteFilePath, file.fileFlags, modGroup);
+                }
 		    }
 
 		    if (mod.folders != null)
