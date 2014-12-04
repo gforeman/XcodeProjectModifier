@@ -470,17 +470,17 @@ namespace UnityEditor.XCodeEditor
 			currentObject.Value.AddBuildFile( buildFile );
 		}
 		
-		public bool AddFolder( string folderPath, PBXGroup parent = null, string[] exclude = null, bool recursive = true, bool createBuildFile = true )
+		public bool AddFolder( string folderPath, string compilerFlags, PBXGroup parent = null, string[] exclude = null, bool recursive = true, bool createBuildFile = true )
 		{
 			Debug.Log("Folder PATH: "+folderPath);
 			if( !Directory.Exists( folderPath ) ){
-				Debug.Log("Directory doesn't exist?");
+				Debug.Log("Directory doesn't exist?: " + folderPath);
 				return false;
 			}
 
 			if (folderPath.EndsWith(".lproj")){
 				Debug.Log("Ended with .lproj");
-				return AddLocFolder(folderPath, parent, exclude, createBuildFile);
+				return AddLocFolder(folderPath, compilerFlags, parent, exclude, createBuildFile);
 			}
 
  			DirectoryInfo sourceDirectoryInfo = new DirectoryInfo( folderPath );
@@ -505,13 +505,13 @@ namespace UnityEditor.XCodeEditor
 					// Treat it like a file and copy even if not recursive
 					// TODO also for .xcdatamodeld?
 					Debug.LogWarning( "This is a special folder: " + directory );
-                    AddFile(directory, "", newGroup, "SOURCE_ROOT", createBuildFile);
-                    continue;
+					AddFile(directory, compilerFlags, newGroup, "SOURCE_ROOT", createBuildFile);
+					continue;
 				}
 				
 				if( recursive ) {
 					Debug.Log( "recursive" );
-					AddFolder( directory, newGroup, exclude, recursive, createBuildFile );
+					AddFolder( directory, compilerFlags, newGroup, exclude, recursive, createBuildFile );
 				}
 			}
 			
@@ -522,15 +522,15 @@ namespace UnityEditor.XCodeEditor
 					continue;
 				}
 				Debug.Log("Adding Files for Folder");
-                AddFile(file, "", newGroup, "SOURCE_ROOT", createBuildFile);
-            }
+				AddFile(file, compilerFlags, newGroup, "SOURCE_ROOT", createBuildFile);
+			}
 			
 			modified = true;
 			return modified;
 		}
 
 		// We support neither recursing into nor bundles contained inside loc folders
-		public bool AddLocFolder( string folderPath, PBXGroup parent = null, string[] exclude = null, bool createBuildFile = true)
+		public bool AddLocFolder( string folderPath, string compilerFlags, PBXGroup parent = null, string[] exclude = null, bool createBuildFile = true)
 		{
 			DirectoryInfo sourceDirectoryInfo = new DirectoryInfo( folderPath );
 
@@ -565,13 +565,13 @@ namespace UnityEditor.XCodeEditor
 				// The group gets a reference to the variant, not to the file itself
 				newGroup.AddChild(variant);
 
-                //AddFile(file, variant, "GROUP", createBuildFile);
-                AddFile(file, "", variant, "GROUP", createBuildFile);
-            }
+				//AddFile(file, variant, "GROUP", createBuildFile);
+				AddFile(file, compilerFlags, variant, "GROUP", createBuildFile);
+			}
 			
 			modified = true;
 			return modified;
-		}		
+		}       
 		#endregion
 
 		#region Getters
@@ -819,7 +819,7 @@ namespace UnityEditor.XCodeEditor
 		#endregion
 
 		public void Dispose()
-   		{
-   		}
+		{
+		}
 	}
 }
