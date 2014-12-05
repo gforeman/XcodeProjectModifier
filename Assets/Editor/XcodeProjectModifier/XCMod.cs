@@ -9,6 +9,7 @@ namespace UnityEditor.XCodeEditor
 		private Hashtable _datastore = new Hashtable();
 		private ArrayList _libs = null;
 	    private ArrayList _files = null;
+		private ArrayList _folders = null;
 		
 		public string name { get; private set; }
 		public string path { get; private set; }
@@ -79,8 +80,20 @@ namespace UnityEditor.XCodeEditor
         }
 
 		public ArrayList folders {
-			get {
-				return (ArrayList)_datastore["folders"];
+			get 
+			{
+				if (_folders == null)
+				{
+					if (_datastore["folders"] != null)
+					{
+						_folders = new ArrayList(((ArrayList)_datastore["folders"]).Count);
+						foreach (string folderString in (ArrayList)_datastore["folders"])
+						{
+							_folders.Add(new XCModFolder(folderString));
+						}
+					}
+				}
+				return _folders;
 			}
 		}
 		
@@ -140,6 +153,24 @@ namespace UnityEditor.XCodeEditor
 			}
 			else {
 				filePath = inputString;
+			}
+		}
+	}
+	
+	public class XCModFolder
+	{
+		public string folderPath { get; private set; }
+		public string folderFlags { get; private set; }
+		
+		public XCModFolder( string inputString )
+		{
+			if( inputString.Contains( ":" ) ) {
+				string[] parts = inputString.Split( ':' );
+				folderPath = parts[0];
+				folderFlags = parts[1];
+			}
+			else {
+				folderPath = inputString;
 			}
 		}
 	}
